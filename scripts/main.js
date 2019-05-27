@@ -1,3 +1,5 @@
+import {SpreadsheetReader, SpreadsheetTabDescriptor, PostProcessableSpreadsheetReaderDescriptor} from '../libs/gspreadsheet-reader.js';
+
 let students = [], studentsById = {}, currentStudent = null;
 function resetSelect() {
     $(".select2").select2({
@@ -47,9 +49,57 @@ function fillStudents(fetchedStudents) {
 }
 
 function refreshStudents() {
-    fetch('/scripts/data.json')
-        .then((res) => res.json())
-        .then((fetchedStudents) => fillStudents(fetchedStudents));
+    SpreadsheetReader.readFromDescriptors(spreadsheetKey, [
+        new SpreadsheetTabDescriptor({
+            tabId: 1 /* 1 */ /* 1917990444 */,
+            dataField: "students",
+            descriptor: new PostProcessableSpreadsheetReaderDescriptor({
+                firstRow: 2,
+                columnFields: {
+                    "A": "lastName", "B": "firstName", "E": "adultsCount", "F": "childrenCount", "G": "detail", "C": "gradeName"
+                },
+                fieldsRequiredToConsiderFilledRow: ["firstName", "lastName"],
+                postProcess: (results) => {
+                    _.each(results, (result, index) => {
+                        result.id = index;
+                        result.adultsCount = Number(result.adultsCount || 0);
+                        result.childrenCount = Number(result.childrenCount || 0);
+                        if(
+                            result.gradeName.indexOf("CP") !== -1
+                            || result.gradeName.indexOf("CE1") !== -1
+                            || result.gradeName.indexOf("CE2") !== -1
+                            || result.gradeName.indexOf("CM1") !== -1
+                            || result.gradeName.indexOf("CM2") !== -1
+                        ) {
+                            result.grade = 'Primaire';
+                        } else {
+                            result.grade = 'Maternelle';
+                        }
+
+                        result.detail = result.detail || "";
+                    });
+
+                    results = _.sortBy(results, 'lastName');
+                    return results;
+                }
+            })
+        })
+    ]).then((results) => {
+        let fetchedStudents = results[0][0];
+        fillStudents(fetchedStudents);
+    });
+}
+
+function getQueryVariable(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) == variable) {
+            return decodeURIComponent(pair[1]);
+        }
+    }
+    console.log('Query variable %s not found', variable);
 }
 
 function showStudentDetail(student) {
@@ -70,6 +120,15 @@ function updateStudent(student) {
 
     fillStudents(students);
 }
+
+let spreadsheetKey = localStorage.getItem('spreadsheet-key');
+if(!spreadsheetKey) {
+    spreadsheetKey = getQueryVariable('spreadsheetKey');
+}
+if(!spreadsheetKey) {
+    spreadsheetKey = prompt("GSpreadsheet key");
+}
+localStorage.setItem("spreadsheet-key", spreadsheetKey);
 
 $(() => {
     $("#refreshData").on('click', () => refreshStudents());
