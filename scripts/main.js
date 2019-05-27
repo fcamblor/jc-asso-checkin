@@ -106,8 +106,8 @@ function showStudentDetail(student) {
     currentStudent = student;
 
     $("#grade").html(student.grade);
-    $("#adultsCount").val(student.adultsCount || student.plannedAdultsCount);
-    $("#childrenCount").val(student.childrenCount || student.plannedChildrenCount);
+    $("#adultsCount").val(student.adultsCount);
+    $("#childrenCount").val(student.childrenCount);
     $("#description").html(student.detail.replace("\n", "<br/>"));
 
     $("#details").show();
@@ -139,8 +139,8 @@ $(() => {
     });
     $("#updateStudent").on('click', () => updateStudent(currentStudent));
     $(":input[type='number']").on('focusin', (event) => $(event.currentTarget).val(''));
-    $("#adultsCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || currentStudent.adultsCount || currentStudent.plannedAdultsCount));
-    $("#childrenCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || currentStudent.childrenCount || currentStudent.plannedChildrenCount));
+    $("#adultsCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || currentStudent.adultsCount));
+    $("#childrenCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || currentStudent.childrenCount));
 
     refreshStudents();
 });
