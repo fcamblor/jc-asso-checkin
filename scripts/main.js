@@ -55,6 +55,7 @@ function refreshStudents() {
 function showStudentDetail(student) {
     currentStudent = student;
 
+    $("#grade").html(student.grade);
     $("#adultsCount").val(student.adultsCount || student.plannedAdultsCount);
     $("#childrenCount").val(student.childrenCount || student.plannedChildrenCount);
     $("#description").html(student.detail.replace("\n", "<br/>"));
