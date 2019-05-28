@@ -67,14 +67,30 @@
         <table cellspacing="0" border="1" cellpadding="5">
             <thead>
                 <tr>
-                    <th>Adultes</th>
-                    <th>Enfants</th>
+                    <th style="background-color: lightgrey">Type</th>
+                    <th style="background-color: lightgrey">Adultes</th>
+                    <th style="background-color: lightgrey">Enfants</th>
+                    <th style="background-color: lightgrey">TOTAL</th>
                 </tr>
             </thead>
             <tbody>
-                <tr style="text-align: center">
+                <tr style="text-align: center;">
+                    <td>Maternelle</td>
+                    <td id="totalMaternelleAdults"></td>
+                    <td id="totalMaternelleChildren"></td>
+                    <td id="totalMaternelle" style="font-weight: bold"></td>
+                </tr>
+                <tr style="text-align: center;">
+                    <td>Primaires</td>
+                    <td id="totalPrimaireAdults"></td>
+                    <td id="totalPrimaireChildren"></td>
+                    <td id="totalPrimaire" style="font-weight: bold"></td>
+                </tr>
+                <tr style="text-align: center; font-weight: bold">
+                    <td>TOTAUX</td>
                     <td id="totalAdults"></td>
                     <td id="totalChildren"></td>
+                    <td id="total"></td>
                 </tr>
             </tbody>
         </table>

@@ -37,13 +37,24 @@ function fillStudents(fetchedStudents) {
     let totals = _(fetchedStudents)
         .reduce((totals, student) => {
             return {
+                maternelleAdults: totals.maternelleAdults + ((student.latestUpdate && student.grade === 'Maternelle')?student.adultsCount:0),
+                maternelleChildren: totals.maternelleChildren + ((student.latestUpdate && student.grade === 'Maternelle')?student.childrenCount:0),
+                primaireAdults: totals.primaireAdults + ((student.latestUpdate && student.grade === 'Primaire')?student.adultsCount:0),
+                primaireChildren: totals.primaireChildren + ((student.latestUpdate && student.grade === 'Primaire')?student.childrenCount:0),
                 adults: totals.adults + (student.latestUpdate?student.adultsCount:0),
                 children: totals.children + (student.latestUpdate?student.childrenCount:0)
             };
-        }, { adults: 0, children: 0 });
+        }, { maternelleAdults: 0, maternelleChildren: 0, primaireAdults: 0, primaireChildren: 0, adults: 0, children: 0 });
 
+    $("#totalMaternelleAdults").html(""+(totals.maternelleAdults || 0));
+    $("#totalMaternelleChildren").html(""+(totals.maternelleChildren || 0));
+    $("#totalMaternelle").html(""+((totals.maternelleChildren || 0) + (totals.maternelleAdults || 0)));
+    $("#totalPrimaireAdults").html(""+(totals.primaireAdults || 0));
+    $("#totalPrimaireChildren").html(""+(totals.primaireChildren || 0));
+    $("#totalPrimaire").html(""+((totals.primaireChildren || 0) + (totals.primaireAdults || 0)));
     $("#totalAdults").html(""+(totals.adults || 0));
     $("#totalChildren").html(""+(totals.children || 0));
+    $("#total").html(""+((totals.children || 0) + (totals.adults || 0)));
 
     resetSelect();
 }
