@@ -229,6 +229,7 @@ $(() => {
     $("#adultsCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || extractCount(currentStudent.adultsCount, currentStudent.plannedAdultsCount)));
     $("#childrenCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || extractCount(currentStudent.childrenCount, currentStudent.plannedChildrenCount)));
 
+    setInterval(() => refreshStudents(), 60000);
     refreshStudents();
 });
 
