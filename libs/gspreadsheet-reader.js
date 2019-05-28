@@ -16,15 +16,21 @@ export class SpreadsheetTabDescriptor {
 export class SpreadsheetReader {
     constructor() {
     }
+    static executeJSONP(url) {
+        return new Promise((resolve, reject) => {
+            window.jsonpCallbacks = window.jsonpCallbacks || {};
+            let functionName = `readSpreadsheet${SpreadsheetReader.callbackCounts++}`;
+            window.jsonpCallbacks[functionName] = (results) => {
+                resolve(results);
+            };
+            let script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = `${url}?alt=json-in-script&callback=jsonpCallbacks.${functionName}`;
+            document.body.appendChild(script);
+        });
+    }
     static readFromDescriptors(spreadsheetId, descriptors, errorHandler) {
-        return Promise.all(_.map(descriptors, (spreadsheetTabDescriptor) => fetch(`https://spreadsheets.google.com/feeds/cells/${spreadsheetId}/${spreadsheetTabDescriptor.tabId}/public/basic?alt=json&v=3.0`, {
-            method: 'get',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            mode: 'cors'
-        }).then(result => result.json()).then(result => new SpreadsheetReader().read(result, spreadsheetTabDescriptor.descriptor), () => {
+        return Promise.all(_.map(descriptors, (spreadsheetTabDescriptor) => SpreadsheetReader.executeJSONP(`https://spreadsheets.google.com/feeds/cells/${spreadsheetId}/${spreadsheetTabDescriptor.tabId}/public/basic`).then(result => new SpreadsheetReader().read(result, spreadsheetTabDescriptor.descriptor), () => {
             (errorHandler || console.error)(`Error while fetching spreadsheet info for tab ${spreadsheetTabDescriptor.tabId}`);
             return Promise.reject(null);
         }))).then((...results) => results);
@@ -71,4 +77,5 @@ export class SpreadsheetReader {
         });
     }
 }
+SpreadsheetReader.callbackCounts = 1;
 //# sourceMappingURL=gspreadsheet-reader.js.map
