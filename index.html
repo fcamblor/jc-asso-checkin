@@ -63,14 +63,15 @@
     </div>
     <hr class="half-rule" />
     <div class="container-fluid">
-        <h3>Totaux</h3>
+        <h3>Entrées</h3>
         <table cellspacing="0" border="1" cellpadding="5">
             <thead>
                 <tr>
                     <th style="background-color: lightgrey">Type</th>
-                    <th style="background-color: lightgrey">Adultes</th>
-                    <th style="background-color: lightgrey">Enfants</th>
-                    <th style="background-color: lightgrey">TOTAL</th>
+                    <th style="background-color: lightgrey">Adul</th>
+                    <th style="background-color: lightgrey">Enf</th>
+                    <th style="background-color: lightgrey">TOT</th>
+                    <th style="background-color: lightgrey">✔️</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,19 +80,57 @@
                     <td id="totalMaternelleAdults"></td>
                     <td id="totalMaternelleChildren"></td>
                     <td id="totalMaternelle" style="font-weight: bold"></td>
+                    <td id="totalMaternelleCheckins"></td>
                 </tr>
                 <tr style="text-align: center;">
                     <td>Primaires</td>
                     <td id="totalPrimaireAdults"></td>
                     <td id="totalPrimaireChildren"></td>
                     <td id="totalPrimaire" style="font-weight: bold"></td>
+                    <td id="totalPrimaireCheckins"></td>
                 </tr>
                 <tr style="text-align: center; font-weight: bold">
                     <td>TOTAUX</td>
                     <td id="totalAdults"></td>
                     <td id="totalChildren"></td>
                     <td id="total"></td>
+                    <td id="totalCheckins"></td>
                 </tr>
+            </tbody>
+        </table>
+        <h3>Entrées restantes (prév)</h3>
+        <table cellspacing="0" border="1" cellpadding="5">
+            <thead>
+            <tr>
+                <th style="background-color: lightgrey">Type</th>
+                <th style="background-color: lightgrey">Adul</th>
+                <th style="background-color: lightgrey">Enf</th>
+                <th style="background-color: lightgrey">TOT</th>
+                <th style="background-color: lightgrey">✔️</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr style="text-align: center;">
+                <td>Maternelle</td>
+                <td id="remainingMaternelleAdults"></td>
+                <td id="remainingMaternelleChildren"></td>
+                <td id="remainingMaternelle" style="font-weight: bold"></td>
+                <td id="remainingMaternelleCheckins"></td>
+            </tr>
+            <tr style="text-align: center;">
+                <td>Primaires</td>
+                <td id="remainingPrimaireAdults"></td>
+                <td id="remainingPrimaireChildren"></td>
+                <td id="remainingPrimaire" style="font-weight: bold"></td>
+                <td id="remainingPrimaireCheckins"></td>
+            </tr>
+            <tr style="text-align: center; font-weight: bold">
+                <td>TOTAUX</td>
+                <td id="remainingAdults"></td>
+                <td id="remainingChildren"></td>
+                <td id="remaining"></td>
+                <td id="remainingCheckins"></td>
+            </tr>
             </tbody>
         </table>
     </div>

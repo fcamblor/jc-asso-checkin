@@ -3,8 +3,7 @@ import {SpreadsheetReader, SpreadsheetTabDescriptor, PostProcessableSpreadsheetR
 let students = [], studentsById = {}, currentStudent = null;
 function resetSelect() {
     $(".select2").select2({
-        placeholder: "Rechercher",
-        // allowClear: true
+        placeholder: "Rechercher"
     });
 }
 
@@ -28,7 +27,7 @@ function fillStudents(fetchedStudents) {
                 <option value="${student.id}" ${student.id == selectedValue?"selected":""}>
                     ${student.lastName.toUpperCase()} 
                     ${student.firstName[0].toUpperCase() + student.firstName.substr(1).toLowerCase()}
-                    ${student.latestUpdate?"✅":""}
+                    ${student.latestUpdate?"✔️":""}
                 </option>
             `);
             $(selectorByGrade[grade]).html($(html.join("\n")));
@@ -37,24 +36,67 @@ function fillStudents(fetchedStudents) {
     let totals = _(fetchedStudents)
         .reduce((totals, student) => {
             return {
-                maternelleAdults: totals.maternelleAdults + ((student.latestUpdate && student.grade === 'Maternelle')?student.adultsCount:0),
-                maternelleChildren: totals.maternelleChildren + ((student.latestUpdate && student.grade === 'Maternelle')?student.childrenCount:0),
-                primaireAdults: totals.primaireAdults + ((student.latestUpdate && student.grade === 'Primaire')?student.adultsCount:0),
-                primaireChildren: totals.primaireChildren + ((student.latestUpdate && student.grade === 'Primaire')?student.childrenCount:0),
-                adults: totals.adults + (student.latestUpdate?student.adultsCount:0),
-                children: totals.children + (student.latestUpdate?student.childrenCount:0)
+                real: {
+                    maternelleAdults: totals.real.maternelleAdults + ((student.latestUpdate && student.grade === 'Maternelle')?student.adultsCount:0),
+                    maternelleChildren: totals.real.maternelleChildren + ((student.latestUpdate && student.grade === 'Maternelle')?student.childrenCount:0),
+                    maternelleCheckins: totals.real.maternelleCheckins + ((student.latestUpdate && student.grade === 'Maternelle')?1:0),
+                    primaireAdults: totals.real.primaireAdults + ((student.latestUpdate && student.grade === 'Primaire')?student.adultsCount:0),
+                    primaireChildren: totals.real.primaireChildren + ((student.latestUpdate && student.grade === 'Primaire')?student.childrenCount:0),
+                    primaireCheckins: totals.real.primaireCheckins + ((student.latestUpdate && student.grade === 'Primaire')?1:0),
+                    adults: totals.real.adults + (student.latestUpdate?student.adultsCount:0),
+                    children: totals.real.children + (student.latestUpdate?student.childrenCount:0),
+                    checkins: totals.real.checkins + (student.latestUpdate?1:0)
+                },
+                remaining: {
+                    maternelleAdults: totals.remaining.maternelleAdults + (((!student.latestUpdate) && student.grade === 'Maternelle')?student.plannedAdultsCount:0),
+                    maternelleChildren: totals.remaining.maternelleChildren + (((!student.latestUpdate) && student.grade === 'Maternelle')?student.plannedChildrenCount:0),
+                    maternelleCheckins: totals.remaining.maternelleCheckins + (((!student.latestUpdate) && student.grade === 'Maternelle' && student.plannedChildrenCount)?1:0),
+                    primaireAdults: totals.remaining.primaireAdults + (((!student.latestUpdate) && student.grade === 'Primaire')?student.plannedAdultsCount:0),
+                    primaireChildren: totals.remaining.primaireChildren + (((!student.latestUpdate) && student.grade === 'Primaire')?student.plannedChildrenCount:0),
+                    primaireCheckins: totals.remaining.primaireCheckins + (((!student.latestUpdate) && student.grade === 'Primaire' && student.plannedChildrenCount)?1:0),
+                    adults: totals.remaining.adults + ((!student.latestUpdate)?student.plannedAdultsCount:0),
+                    children: totals.remaining.children + ((!student.latestUpdate)?student.plannedChildrenCount:0),
+                    checkins: totals.remaining.checkins + (((!student.latestUpdate) && student.plannedChildrenCount)?1:0)
+                }
             };
-        }, { maternelleAdults: 0, maternelleChildren: 0, primaireAdults: 0, primaireChildren: 0, adults: 0, children: 0 });
+        }, {
+            real: {
+                maternelleAdults: 0, maternelleChildren: 0, maternelleCheckins: 0,
+                primaireAdults: 0, primaireChildren: 0, primaireCheckins: 0,
+                adults: 0, children: 0, checkins: 0
+            },
+            remaining: {
+                maternelleAdults: 0, maternelleChildren: 0, maternelleCheckins: 0,
+                primaireAdults: 0, primaireChildren: 0, primaireCheckins: 0,
+                adults: 0, children: 0, checkins: 0
+            }
+        });
 
-    $("#totalMaternelleAdults").html(""+(totals.maternelleAdults || 0));
-    $("#totalMaternelleChildren").html(""+(totals.maternelleChildren || 0));
-    $("#totalMaternelle").html(""+((totals.maternelleChildren || 0) + (totals.maternelleAdults || 0)));
-    $("#totalPrimaireAdults").html(""+(totals.primaireAdults || 0));
-    $("#totalPrimaireChildren").html(""+(totals.primaireChildren || 0));
-    $("#totalPrimaire").html(""+((totals.primaireChildren || 0) + (totals.primaireAdults || 0)));
-    $("#totalAdults").html(""+(totals.adults || 0));
-    $("#totalChildren").html(""+(totals.children || 0));
-    $("#total").html(""+((totals.children || 0) + (totals.adults || 0)));
+    $("#totalMaternelleAdults").html(""+(totals.real.maternelleAdults || 0));
+    $("#totalMaternelleChildren").html(""+(totals.real.maternelleChildren || 0));
+    $("#totalMaternelleCheckins").html(""+(totals.real.maternelleCheckins || 0));
+    $("#totalMaternelle").html(""+((totals.real.maternelleChildren || 0) + (totals.real.maternelleAdults || 0)));
+    $("#totalPrimaireAdults").html(""+(totals.real.primaireAdults || 0));
+    $("#totalPrimaireChildren").html(""+(totals.real.primaireChildren || 0));
+    $("#totalPrimaireCheckins").html(""+(totals.real.primaireCheckins || 0));
+    $("#totalPrimaire").html(""+((totals.real.primaireChildren || 0) + (totals.real.primaireAdults || 0)));
+    $("#totalAdults").html(""+(totals.real.adults || 0));
+    $("#totalChildren").html(""+(totals.real.children || 0));
+    $("#totalCheckins").html(""+(totals.real.checkins || 0));
+    $("#total").html(""+((totals.real.children || 0) + (totals.real.adults || 0)));
+
+    $("#remainingMaternelleAdults").html(""+(totals.remaining.maternelleAdults || 0));
+    $("#remainingMaternelleChildren").html(""+(totals.remaining.maternelleChildren || 0));
+    $("#remainingMaternelleCheckins").html(""+(totals.remaining.maternelleCheckins || 0));
+    $("#remainingMaternelle").html(""+((totals.remaining.maternelleChildren || 0) + (totals.remaining.maternelleAdults || 0)));
+    $("#remainingPrimaireAdults").html(""+(totals.remaining.primaireAdults || 0));
+    $("#remainingPrimaireChildren").html(""+(totals.remaining.primaireChildren || 0));
+    $("#remainingPrimaireCheckins").html(""+(totals.remaining.primaireCheckins || 0));
+    $("#remainingPrimaire").html(""+((totals.remaining.primaireChildren || 0) + (totals.remaining.primaireAdults || 0)));
+    $("#remainingAdults").html(""+(totals.remaining.adults || 0));
+    $("#remainingChildren").html(""+(totals.remaining.children || 0));
+    $("#remainingCheckins").html(""+(totals.remaining.checkins || 0));
+    $("#remaining").html(""+((totals.remaining.children || 0) + (totals.remaining.adults || 0)));
 
     resetSelect();
 }
@@ -130,7 +172,7 @@ function extractCount(realCount, plannedCount) {
 function showStudentDetail(student) {
     currentStudent = student;
 
-    $("#grade").html(student.grade);
+    $("#grade").html(`${student.grade} - ${student.gradeName}`);
     $("#adultsCount").val(extractCount(student.adultsCount, student.plannedAdultsCount));
     $("#childrenCount").val(extractCount(student.childrenCount, student.plannedChildrenCount));
     $("#description").html(student.detail.replace("\n", "<br/>"));
