@@ -49,21 +49,31 @@ function fillStudents(fetchedStudents) {
 }
 
 function refreshStudents() {
-    SpreadsheetReader.readFromDescriptors(spreadsheetKey, [
+    let previousLastName = null;
+    SpreadsheetReader.readFromDescriptors(KEYS.spreadsheetKey, [
         new SpreadsheetTabDescriptor({
-            tabId: 1 /* 1 */ /* 1917990444 */,
+            tabId: 1,
             dataField: "students",
             descriptor: new PostProcessableSpreadsheetReaderDescriptor({
                 firstRow: 2,
                 columnFields: {
-                    "A": "lastName", "B": "firstName", "E": "adultsCount", "F": "childrenCount", "G": "detail", "C": "gradeName"
+                    "A": "lastName", "B": "firstName",
+                    "E": "plannedAdultsCount", "F": "plannedChildrenCount",
+                    "M": "adultsCount", "N": "childrenCount", "O": "latestUpdate",
+                    "G": "detail", "C": "gradeName"
                 },
-                fieldsRequiredToConsiderFilledRow: ["firstName", "lastName"],
+                fieldsRequiredToConsiderFilledRow: ["firstName"],
                 postProcess: (results) => {
                     _.each(results, (result, index) => {
-                        result.id = index;
-                        result.adultsCount = Number(result.adultsCount || 0);
-                        result.childrenCount = Number(result.childrenCount || 0);
+                        result.id = index + 1;
+
+                        result.lastName = result.lastName || previousLastName;
+                        previousLastName = result.lastName;
+
+                        result.plannedAdultsCount = Number(result.plannedAdultsCount || 0);
+                        result.plannedChildrenCount = Number(result.plannedChildrenCount || 0);
+                        result.adultsCount = (result.adultsCount===undefined || result.adultsCount===null)?null:Number(result.adultsCount);
+                        result.childrenCount = (result.childrenCount===undefined || result.childrenCount===null)?null:Number(result.childrenCount);
                         if(
                             result.gradeName.indexOf("CP") !== -1
                             || result.gradeName.indexOf("CE1") !== -1
@@ -102,12 +112,16 @@ function getQueryVariable(variable) {
     console.log('Query variable %s not found', variable);
 }
 
+function extractCount(realCount, plannedCount) {
+    return realCount === null ? plannedCount : realCount;
+}
+
 function showStudentDetail(student) {
     currentStudent = student;
 
     $("#grade").html(student.grade);
-    $("#adultsCount").val(student.adultsCount);
-    $("#childrenCount").val(student.childrenCount);
+    $("#adultsCount").val(extractCount(student.adultsCount, student.plannedAdultsCount));
+    $("#childrenCount").val(extractCount(student.childrenCount, student.plannedChildrenCount));
     $("#description").html(student.detail.replace("\n", "<br/>"));
 
     $("#details").show();
@@ -119,16 +133,36 @@ function updateStudent(student) {
     student.latestUpdate = new Date().toISOString();
 
     fillStudents(students);
+    sendStudentData(student);
 }
 
-let spreadsheetKey = localStorage.getItem('spreadsheet-key');
-if(!spreadsheetKey) {
-    spreadsheetKey = getQueryVariable('spreadsheetKey');
+function sendStudentData(student) {
+    fetch(`https://script.google.com/macros/s/${KEYS.spreadsheetScriptKey}/exec`, {
+        method: 'post',
+        body: JSON.stringify(student),
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
 }
-if(!spreadsheetKey) {
-    spreadsheetKey = prompt("GSpreadsheet key");
+
+var KEYS = {};
+function requireSpreadsheetKey(keyName, localstorageKeyName, promptMessage) {
+    let spreadsheetKey = localStorage.getItem(localstorageKeyName);
+    if(!spreadsheetKey) {
+        spreadsheetKey = getQueryVariable(keyName);
+    }
+    if(!spreadsheetKey) {
+        spreadsheetKey = prompt(promptMessage);
+    }
+    localStorage.setItem(localstorageKeyName, spreadsheetKey);
+
+    KEYS[keyName] = spreadsheetKey;
 }
-localStorage.setItem("spreadsheet-key", spreadsheetKey);
+
+requireSpreadsheetKey('spreadsheetKey', 'spreadsheet-key', 'GSpreadsheet key');
+requireSpreadsheetKey('spreadsheetScriptKey', 'spreadsheet-script-key', 'Script key');
 
 $(() => {
     $("#refreshData").on('click', () => refreshStudents());
@@ -139,8 +173,8 @@ $(() => {
     });
     $("#updateStudent").on('click', () => updateStudent(currentStudent));
     $(":input[type='number']").on('focusin', (event) => $(event.currentTarget).val(''));
-    $("#adultsCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || currentStudent.adultsCount));
-    $("#childrenCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || currentStudent.childrenCount));
+    $("#adultsCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || extractCount(currentStudent.adultsCount, currentStudent.plannedAdultsCount)));
+    $("#childrenCount").on('focusout', (event) => $(event.currentTarget).val($(event.currentTarget).val() || extractCount(currentStudent.childrenCount, currentStudent.plannedChildrenCount)));
 
     refreshStudents();
 });
