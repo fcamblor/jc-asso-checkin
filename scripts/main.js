@@ -1,4 +1,5 @@
 import {SpreadsheetReader, SpreadsheetTabDescriptor, PostProcessableSpreadsheetReaderDescriptor} from '../libs/gspreadsheet-reader.js';
+import {WriteQueue} from '../libs/WriteQueue.js';
 
 let students = [], studentsById = {}, currentStudent = null;
 function resetSelect() {
@@ -102,6 +103,11 @@ function fillStudents(fetchedStudents) {
 }
 
 function refreshStudents() {
+    if(!navigator.onLine) {
+        console.info("Refresh students skipped : offline");
+        return;
+    }
+
     let previousLastName = null;
     SpreadsheetReader.readFromDescriptors(KEYS.spreadsheetKey, [
         new SpreadsheetTabDescriptor({
@@ -186,17 +192,10 @@ function updateStudent(student) {
     student.latestUpdate = new Date().toISOString();
 
     fillStudents(students);
-    sendStudentData(student);
-}
-
-function sendStudentData(student) {
-    fetch(`https://script.google.com/macros/s/${KEYS.spreadsheetScriptKey}/exec`, {
-        method: 'post',
-        body: JSON.stringify(student),
-        mode: 'no-cors',
-        headers: {
-            'Content-Type': 'application/json'
-        }
+    writeQueue.queueOperation({
+        type: 'student-update',
+        serializableData: student,
+        finalizerName: 'no-op'
     });
 }
 
@@ -217,6 +216,47 @@ function requireSpreadsheetKey(keyName, localstorageKeyName, promptMessage) {
 requireSpreadsheetKey('spreadsheetKey', 'spreadsheet-key', 'GSpreadsheet key');
 requireSpreadsheetKey('spreadsheetScriptKey', 'spreadsheet-script-key', 'Script key');
 
+let writeQueue = new WriteQueue({
+    name: 'offline-actions',
+    finalizer: {
+        onSuccess(writeOperation) {
+            var localStudent = studentsById[writeOperation.serializableData.id];
+            var persistedStudent = writeOperation.serializableData;
+
+            localStudent.adultsCount = persistedStudent.adultsCount;
+            localStudent.childrenCount = persistedStudent.childrenCount;
+            localStudent.latestUpdate = persistedStudent.latestUpdate;
+
+            fillStudents(students);
+        }
+    },
+    operationsPersistor: {
+        persist(name, writeOperations) {
+            localStorage.setItem(`writeOps-${name}`, JSON.stringify(writeOperations));
+            return Promise.resolve();
+        },
+        load(name) {
+            return Promise.resolve(JSON.parse(localStorage.getItem(`writeOps-${name}`) || "[]"));
+        }
+    },
+    operationExecutor: (writeOperation) => {
+        return new Promise((resolve, reject) => {
+            fetch(`https://script.google.com/macros/s/${KEYS.spreadsheetScriptKey}/exec`, {
+                method: 'post',
+                body: JSON.stringify(writeOperation.serializableData),
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(resolve, () => {
+                // TODO: handle timeouts
+                reject();
+            })
+        });
+    },
+    onExceptionOccuredInCode: console.error
+});
+
 $(() => {
     $("#refreshData").on('click', () => refreshStudents());
     $(".select2").on('change', (event) => {
@@ -231,5 +271,7 @@ $(() => {
 
     setInterval(() => refreshStudents(), 60000);
     refreshStudents();
+
+    writeQueue.start();
 });
 
